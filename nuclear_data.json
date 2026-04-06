@@ -1,0 +1,134 @@
+{
+  "metadata": {
+    "description": "Thermal neutron cross sections at 0.0253 eV (293.6 K)",
+    "source": "ENDF/B-VIII.0",
+    "energy_eV": 0.0253,
+    "units": {
+      "cross_section": "barns",
+      "molar_mass": "g/mol",
+      "nu": "neutrons/fission"
+    }
+  },
+  "isotopes": {
+    "U-235": {
+      "name": "Uranium-235",
+      "molar_mass": 235.0439299,
+      "xs_fission": 584.4,
+      "xs_capture": 98.81,
+      "xs_elastic": 10.0,
+      "xs_total": 693.21,
+      "nu": 2.4367,
+      "description": "Primary reactor fuel, weapons-grade uranium",
+      "natural_abundance": 0.72,
+      "density_metal": 19.1
+    },
+    "U-238": {
+      "name": "Uranium-238",
+      "molar_mass": 238.0507882,
+      "xs_fission": 0.00001,
+      "xs_capture": 2.717,
+      "xs_elastic": 8.871,
+      "xs_total": 11.588,
+      "nu": 0.0,
+      "description": "Non-fissile at thermal energies, fertile material",
+      "natural_abundance": 99.27,
+      "density_metal": 19.1
+    },
+    "Pu-239": {
+      "name": "Plutonium-239",
+      "molar_mass": 239.0521634,
+      "xs_fission": 747.4,
+      "xs_capture": 268.8,
+      "xs_elastic": 7.97,
+      "xs_total": 1024.17,
+      "nu": 2.8758,
+      "description": "Weapons-grade plutonium, reactor fuel",
+      "natural_abundance": 0.0,
+      "density_metal": 19.86
+    },
+    "Pu-240": {
+      "name": "Plutonium-240",
+      "molar_mass": 240.0538135,
+      "xs_fission": 0.064,
+      "xs_capture": 289.6,
+      "xs_elastic": 1.6,
+      "xs_total": 291.264,
+      "nu": 2.9,
+      "description": "Contaminant in Pu-239, neutron absorber",
+      "natural_abundance": 0.0,
+      "density_metal": 19.86
+    },
+    "Pu-241": {
+      "name": "Plutonium-241",
+      "molar_mass": 241.0568515,
+      "xs_fission": 1011.0,
+      "xs_capture": 363.0,
+      "xs_elastic": 12.3,
+      "xs_total": 1386.3,
+      "nu": 2.932,
+      "description": "Highly fissile, decays to Am-241",
+      "natural_abundance": 0.0,
+      "density_metal": 19.86
+    },
+    "H-1": {
+      "name": "Hydrogen-1",
+      "molar_mass": 1.00782503207,
+      "xs_fission": 0.0,
+      "xs_capture": 0.3326,
+      "xs_elastic": 20.491,
+      "xs_total": 20.8236,
+      "nu": 0.0,
+      "description": "Neutron moderator (in water, polyethylene)",
+      "natural_abundance": 99.985,
+      "density_metal": 0.0
+    },
+    "C-12": {
+      "name": "Carbon-12",
+      "molar_mass": 12.0,
+      "xs_fission": 0.0,
+      "xs_capture": 0.00353,
+      "xs_elastic": 4.746,
+      "xs_total": 4.74953,
+      "nu": 0.0,
+      "description": "Neutron moderator (graphite)",
+      "natural_abundance": 98.93,
+      "density_metal": 2.267
+    },
+    "O-16": {
+      "name": "Oxygen-16",
+      "molar_mass": 15.99491461956,
+      "xs_fission": 0.0,
+      "xs_capture": 0.00019,
+      "xs_elastic": 3.761,
+      "xs_total": 3.76119,
+      "nu": 0.0,
+      "description": "In water moderator (H2O)",
+      "natural_abundance": 99.757,
+      "density_metal": 0.0
+    },
+    "B-10": {
+      "name": "Boron-10",
+      "molar_mass": 10.0129370,
+      "xs_fission": 0.0,
+      "xs_capture": 3835.0,
+      "xs_elastic": 2.0,
+      "xs_total": 3837.0,
+      "nu": 0.0,
+      "description": "Neutron absorber (control rods)",
+      "natural_abundance": 19.9,
+      "density_metal": 2.34
+    },
+    "Cd-113": {
+      "name": "Cadmium-113",
+      "molar_mass": 112.9044017,
+      "xs_fission": 0.0,
+      "xs_capture": 20600.0,
+      "xs_elastic": 5.0,
+      "xs_total": 20605.0,
+      "nu": 0.0,
+      "description": "Strong neutron absorber (control rods)",
+      "natural_abundance": 12.22,
+      "density_metal": 8.65
+    }
+  }
+}
