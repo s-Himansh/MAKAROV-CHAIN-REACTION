@@ -1,9 +1,11 @@
 package simulation
 
 import (
+	"fmt"
 	"makarov-chains/models"
 	"math"
 	"math/rand/v2"
+	"strings"
 	"time"
 
 	library "makarov-chains/loading_nuclear_data"
@@ -42,6 +44,146 @@ func New(library *library.NuclearDataLibrary, isotope string, thickness float64)
 	sim.ΣTotal = material.TotalCrossSections()
 
 	return sim, nil
+}
+
+func (s *Simulation) Run() {
+	// initialise a random seed
+	rng := rand.New(rand.NewPCG(uint64(s.Params.Seed), 0))
+
+	rng.Float64()
+
+	// start with initial num of neutrons
+	neutronBank := s.Params.NumParticles
+
+	fmt.Printf("Starting simulation: %s, %.1f cm thick\n", s.Material.Nuclide.Name, s.Geometry.Volume)
+	fmt.Printf("Σ_total = %.2f cm⁻¹, MFP = %.4f cm\n\n", s.ΣTotal, 1.0/s.ΣTotal)
+
+	for gen := range s.Params.NumGenerations {
+		if neutronBank == 0 {
+			fmt.Println("Chain reaction died (subcritical)")
+			break
+		}
+
+		// counters for this generation
+		nextBank := 0
+		fissions := 0
+		absorptions := 0
+		escapes := 0
+
+		for n := 0; n < neutronBank; n++ {
+			outcome := s.trackNeutron()
+
+			switch outcome.Type {
+			case models.Fission:
+				fissions++
+				nextBank += outcome.NewNeutrons
+				s.Tally.TotalFissions++
+
+			case models.Absorption:
+				absorptions++
+				s.Tally.TotalAbsorptions++
+
+			case models.Escape:
+				escapes++
+				s.Tally.TotalEscapes++
+			}
+		}
+
+		// statistics
+		s.Tally.NeutronsPerGen = append(s.Tally.NeutronsPerGen, nextBank)
+
+		// calculate k for this generation
+		k_gen := float64(nextBank) / float64(neutronBank)
+
+		// Print generation summary
+		fmt.Printf("Gen %2d: %5d → %5d neutrons (F:%4d A:%4d E:%4d) k=%.3f\n", gen+1, neutronBank, nextBank, fissions, absorptions, escapes, k_gen)
+
+		// POPULATION CONTROL: Keep neutron count constant to prevent explosion
+		// This is standard practice in Monte Carlo criticality calculations
+		if nextBank > s.Params.NumParticles {
+			// Supercritical: randomly sample down to target population
+			neutronBank = s.Params.NumParticles
+		} else if nextBank == 0 {
+			// Chain died
+			neutronBank = 0
+		} else {
+			// Subcritical or exactly critical: use actual count
+			neutronBank = nextBank
+		}
+
+	}
+
+	// calculate final k_eff
+	s.calculateKeff()
+}
+
+// PrintResults displays simulation results
+func (s *Simulation) PrintResults() {
+	fmt.Println("\n" + strings.Repeat("=", 50))
+	fmt.Println("SIMULATION RESULTS")
+	fmt.Println(strings.Repeat("=", 50))
+	fmt.Printf("Material: %s\n", s.Material.Nuclide.Name)
+	fmt.Printf("Geometry: 1D slab, %.2f cm thick\n", s.Geometry.Volume)
+	fmt.Printf("\nTotal events:\n")
+	fmt.Printf("  Fissions:    %d\n", s.Tally.TotalFissions)
+	fmt.Printf("  Absorptions: %d\n", s.Tally.TotalAbsorptions)
+	fmt.Printf("  Escapes:     %d\n", s.Tally.TotalEscapes)
+	fmt.Printf("\nk_effective: %.4f\n", s.Tally.KEff)
+
+	// Interpret k_eff
+	if s.Tally.KEff > 1.0 {
+		fmt.Println("→ SUPERCRITICAL (growing reaction)")
+	} else if s.Tally.KEff < 1.0 {
+		fmt.Println("→ SUBCRITICAL (dying reaction)")
+	} else {
+		fmt.Println("→ CRITICAL (sustained reaction)")
+	}
+}
+
+// calculateKeff calculates Keff from the whole generation history
+func (s *Simulation) calculateKeff() {
+	if len(s.Tally.NeutronsPerGen) < 2 {
+		s.Tally.KEff = 0
+
+		return
+	}
+
+	skipGens := 10
+
+	if len(s.Tally.NeutronsPerGen) < 20 {
+		skipGens = len(s.Tally.NeutronsPerGen) / 2
+	}
+
+	sum := 0.0
+	count := 0
+
+	// average k over all generations (after burn-in)
+	for i := skipGens; i < len(s.Tally.NeutronsPerGen); i++ {
+		// k_i = neutrons_out[i] / neutrons_in[i]
+		// With population control, we always track NumParticles neutrons per generation
+		// (except if the chain dies in subcritical systems)
+		var neutronsIn int
+		if i == 0 {
+			neutronsIn = s.Params.NumParticles
+		} else {
+			prevGen := s.Tally.NeutronsPerGen[i-1]
+			if prevGen > s.Params.NumParticles {
+				neutronsIn = s.Params.NumParticles // Population controlled
+			} else {
+				neutronsIn = prevGen // Subcritical, no control needed
+			}
+		}
+
+		if neutronsIn > 0 {
+			k := float64(s.Tally.NeutronsPerGen[i]) / float64(neutronsIn)
+			sum += k
+			count++
+		}
+	}
+
+	if count > 0 {
+		s.Tally.KEff = sum / float64(count)
+	}
 }
 
 // sampleCollisonDistance measures the distance to the next collison per neutron
