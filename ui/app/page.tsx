@@ -4,14 +4,17 @@ import { useEffect, useState, useRef } from "react";
 import { api, SimResponse, IsotopeInfo } from "../lib/api";
 
 export default function Home() {
-  const [isotopes, setIsotopes] = useState<IsotopeInfo[]>([
-    { name: "U-235", fission_xs: 585.1, absorption_xs: 68.1, scatter_xs: 14.7, nu: 2.42, density: 18.7, description: "Uranium-235" },
-    { name: "U-238", fission_xs: 0, absorption_xs: 2.68, scatter_xs: 8.9, nu: 0, density: 18.7, description: "Uranium-238" },
-    { name: "Pu-239", fission_xs: 747.5, absorption_xs: 286.0, scatter_xs: 10.0, nu: 2.87, density: 19.8, description: "Plutonium-239" },
-    { name: "Th-232", fission_xs: 0, absorption_xs: 7.4, scatter_xs: 12.5, nu: 0, density: 11.7, description: "Thorium-232" },
-    { name: "Pu-241", fission_xs: 1012.0, absorption_xs: 363.0, scatter_xs: 8.0, nu: 2.92, density: 19.8, description: "Plutonium-241" },
-  ]);
-  const [isotope, setIsotope] = useState("U-235");
+  const NAME_MAP: Record<string, string> = {
+    "Uranium-235": "U-235", "Uranium-238": "U-238",
+    "Plutonium-239": "Pu-239", "Plutonium-240": "Pu-240",
+    "Plutonium-241": "Pu-241", "Hydrogen-1": "H-1",
+    "Carbon-12": "C-12", "Oxygen-16": "O-16",
+    "Boron-10": "B-10", "Cadmium-113": "Cd-113",
+    "Thorium-232": "Th-232",
+  };
+
+  const [isotopes, setIsotopes] = useState<IsotopeInfo[]>([]);
+  const [isotope, setIsotope] = useState("");
   const [thickness, setThickness] = useState(20);
   const [geometry, setGeometry] = useState("slab");
   const [particles, setParticles] = useState(1000);
@@ -23,14 +26,15 @@ export default function Home() {
 
   useEffect(() => {
     api.getIsotopes().then((data) => {
-      if (data.isotopes && data.isotopes.length > 0) setIsotopes(data.isotopes);
-    }).catch(() => {
-      setIsotopes([
-        { name: "U-235", fission_xs: 585.1, absorption_xs: 68.1, scatter_xs: 14.7, nu: 2.42, density: 18.7, description: "Uranium-235" },
-        { name: "U-238", fission_xs: 0, absorption_xs: 2.68, scatter_xs: 8.9, nu: 0, density: 18.7, description: "Uranium-238" },
-        { name: "Pu-239", fission_xs: 747.5, absorption_xs: 286.0, scatter_xs: 10.0, nu: 2.87, density: 19.8, description: "Plutonium-239" },
-      ]);
-    });
+      if (data.isotopes && data.isotopes.length > 0) {
+        const mapped = data.isotopes.map((i) => ({
+          ...i,
+          name: NAME_MAP[i.name] || i.name,
+        }));
+        setIsotopes(mapped);
+        if (!isotope) setIsotope(mapped[0].name);
+      }
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {

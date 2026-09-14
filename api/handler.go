@@ -97,13 +97,13 @@ func (h *Handler) handleIsotopes(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		result = append(result, IsotopeInfo{
-			Name:        iso.Name,
-			FissionXS:   iso.XSFission,
+			Name:         name,
+			FissionXS:    iso.XSFission,
 			AbsorptionXS: iso.XSCapture,
-			ScatterXS:   iso.XSElastic,
-			Nu:          iso.Nu,
-			Density:     iso.DensityMetal,
-			Description: iso.Description,
+			ScatterXS:    iso.XSElastic,
+			Nu:           iso.Nu,
+			Density:      iso.DensityMetal,
+			Description:  iso.Description,
 		})
 	}
 
