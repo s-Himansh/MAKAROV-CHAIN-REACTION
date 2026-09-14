@@ -1,6 +1,13 @@
 package models
 
-// defines the physical space neutrons travel in
+type GeometryType int
+
+const (
+	Slab GeometryType = iota
+	Sphere
+)
+
 type Geometry struct {
-	Volume float64 // cm³
+	Thickness float64      // cm (slab thickness or sphere radius)
+	Type      GeometryType
 }
