@@ -4,15 +4,6 @@ import { useEffect, useState, useRef } from "react";
 import { api, SimResponse, IsotopeInfo } from "../lib/api";
 
 export default function Home() {
-  const NAME_MAP: Record<string, string> = {
-    "Uranium-235": "U-235", "Uranium-238": "U-238",
-    "Plutonium-239": "Pu-239", "Plutonium-240": "Pu-240",
-    "Plutonium-241": "Pu-241", "Hydrogen-1": "H-1",
-    "Carbon-12": "C-12", "Oxygen-16": "O-16",
-    "Boron-10": "B-10", "Cadmium-113": "Cd-113",
-    "Thorium-232": "Th-232",
-  };
-
   const [isotopes, setIsotopes] = useState<IsotopeInfo[]>([]);
   const [isotope, setIsotope] = useState("");
   const [thickness, setThickness] = useState(20);
@@ -27,12 +18,8 @@ export default function Home() {
   useEffect(() => {
     api.getIsotopes().then((data) => {
       if (data.isotopes && data.isotopes.length > 0) {
-        const mapped = data.isotopes.map((i) => ({
-          ...i,
-          name: NAME_MAP[i.name] || i.name,
-        }));
-        setIsotopes(mapped);
-        if (!isotope) setIsotope(mapped[0].name);
+        setIsotopes(data.isotopes);
+        if (!isotope) setIsotope(data.isotopes[0].name);
       }
     }).catch(() => {});
   }, []);

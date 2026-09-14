@@ -1,4 +1,4 @@
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080").replace(/\/$/, "");
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "https://makarov-chain-reaction.onrender.com").replace(/\/$/, "");
 
 export interface IsotopeInfo {
   name: string;
