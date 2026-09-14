@@ -1,5 +1,4 @@
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
-const PREFIX = API_BASE ? "" : "http://localhost:8080";
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080").replace(/\/$/, "");
 
 export interface IsotopeInfo {
   name: string;
@@ -38,7 +37,7 @@ export interface SimResponse {
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${PREFIX}${path}`, {
+  const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -55,13 +54,13 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  health: () => request<{ status: string }>(`${PREFIX}/api/health`),
+  health: () => request<{ status: string }>("/api/health"),
 
   getIsotopes: () =>
-    request<{ isotopes: IsotopeInfo[] }>(`${PREFIX}/api/isotopes`),
+    request<{ isotopes: IsotopeInfo[] }>("/api/isotopes"),
 
   simulate: (data: SimRequest) =>
-    request<SimResponse>(`${PREFIX}/api/simulate`, {
+    request<SimResponse>("/api/simulate", {
       method: "POST",
       body: JSON.stringify(data),
     }),
