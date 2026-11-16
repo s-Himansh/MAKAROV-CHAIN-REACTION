@@ -56,3 +56,15 @@ func TestPreflight(t *testing.T) {
 		t.Fatalf("got %d", rec.Code)
 	}
 }
+
+func TestSimulateRejectsBadInactive(t *testing.T) {
+	mux := newTestMux(t)
+	for _, body := range []string{`{"generations":10,"inactive":10}`, `{"generations":10,"inactive":-1}`} {
+		if rec := post(mux, body); rec.Code != 400 {
+			t.Errorf("%s: got %d", body, rec.Code)
+		}
+	}
+	if rec := post(mux, `{"particles":50,"generations":10,"inactive":4}`); rec.Code != 200 {
+		t.Errorf("valid inactive: got %d %s", rec.Code, rec.Body.String())
+	}
+}

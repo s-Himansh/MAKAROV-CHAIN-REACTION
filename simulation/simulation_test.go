@@ -286,3 +286,19 @@ func TestInactiveSkipsGenerations(t *testing.T) {
 		t.Errorf("k_eff = %f, want 2.0", sim.Tally.KEff)
 	}
 }
+
+func TestAutoInactiveScalesWithOpticalThickness(t *testing.T) {
+	lib := loadTestLibrary(t)
+	thin, _ := New(lib, "U-235", 0.05)
+	thick, _ := New(lib, "U-235", 0.3)
+
+	if got := thin.inactiveGenerations(400); got != 10 {
+		t.Errorf("thin: got %d, want 10", got)
+	}
+	if got := thick.inactiveGenerations(400); got < 90 || got > 120 {
+		t.Errorf("thick: got %d, want about 104", got)
+	}
+	if got := thick.inactiveGenerations(50); got != 25 {
+		t.Errorf("short run: got %d, want half (25)", got)
+	}
+}

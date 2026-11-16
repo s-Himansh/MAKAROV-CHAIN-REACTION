@@ -22,6 +22,7 @@ type SimRequest struct {
 	Particles   int     `json:"particles"`
 	Generations int     `json:"generations"`
 	Seed        int64   `json:"seed"`
+	Inactive    int     `json:"inactive"` // optional; 0 = automatic
 }
 
 type SimResponse struct {
@@ -143,7 +144,7 @@ func (h *Handler) handleSimulate(w http.ResponseWriter, r *http.Request) {
 		req.Isotope = "U-235"
 	}
 	if req.Thickness <= 0 {
-		req.Thickness = 20.0
+		req.Thickness = 0.1
 	}
 	if req.Particles <= 0 {
 		req.Particles = 1000
@@ -160,6 +161,9 @@ func (h *Handler) handleSimulate(w http.ResponseWriter, r *http.Request) {
 	case geometry != "slab" && geometry != "sphere":
 		writeError(w, http.StatusBadRequest, "geometry must be slab or sphere")
 		return
+	case req.Inactive < 0 || req.Inactive >= req.Generations:
+		writeError(w, http.StatusBadRequest, "inactive must be between 0 and generations-1")
+		return
 	case req.Particles > maxParticles, req.Generations > maxGenerations, req.Thickness > maxThickness:
 		writeError(w, http.StatusBadRequest, fmt.Sprintf("limits: particles <= %d, generations <= %d, thickness <= %g", maxParticles, maxGenerations, maxThickness))
 		return
@@ -173,6 +177,7 @@ func (h *Handler) handleSimulate(w http.ResponseWriter, r *http.Request) {
 
 	sim.Params.NumParticles = req.Particles
 	sim.Params.NumGenerations = req.Generations
+	sim.Params.Inactive = req.Inactive
 	if req.Seed != 0 {
 		sim.Params.Seed = req.Seed
 	}

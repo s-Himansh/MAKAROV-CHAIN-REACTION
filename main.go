@@ -30,11 +30,11 @@ type Results struct {
 
 func main() {
 	isotope := flag.String("isotope", "U-235", "Isotope to simulate (U-235, U-238, Pu-239, Pu-241)")
-	thickness := flag.Float64("thickness", 20.0, "Slab thickness or sphere radius in cm")
+	thickness := flag.Float64("thickness", 0.1, "Slab thickness or sphere radius in cm")
 	particles := flag.Int("particles", 1000, "Neutrons per generation")
 	generations := flag.Int("generations", 50, "Number of generations to run")
 	geometry := flag.String("geometry", "slab", "Geometry type: slab or sphere")
-	inactive := flag.Int("inactive", 0, "Generations discarded before averaging k (0 = auto); use more for large systems")
+	inactive := flag.Int("inactive", 0, "Generations discarded before averaging k (0 = auto, scaled to system size)")
 	seed := flag.Int64("seed", 0, "Random seed (0 = auto)")
 	output := flag.String("output", "", "Output file path (.json or .csv)")
 	quiet := flag.Bool("quiet", false, "Suppress generation-by-generation output")
