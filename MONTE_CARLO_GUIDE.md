@@ -324,7 +324,7 @@ import (
     "math/rand"
     "time"
 
-    "makarov-chains/models"
+    "github.com/s-Himansh/MAKAROV-CHAIN-REACTION/models"
 )
 
 // InteractionType represents what happened to a neutron
@@ -842,7 +842,7 @@ import (
     "math/rand"
     "time"
 
-    "makarov-chains/models"
+    "github.com/s-Himansh/MAKAROV-CHAIN-REACTION/models"
 )
 
 // [Include all the code from steps 1-8 above]

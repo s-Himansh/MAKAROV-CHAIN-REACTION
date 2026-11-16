@@ -3,12 +3,12 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"makarov-chains/models"
-	"makarov-chains/simulation"
+	"github.com/s-Himansh/MAKAROV-CHAIN-REACTION/models"
+	"github.com/s-Himansh/MAKAROV-CHAIN-REACTION/simulation"
 	"net/http"
 	"strings"
 
-	loadingnucleardata "makarov-chains/loading_nuclear_data"
+	loadingnucleardata "github.com/s-Himansh/MAKAROV-CHAIN-REACTION/loading_nuclear_data"
 )
 
 type Handler struct {

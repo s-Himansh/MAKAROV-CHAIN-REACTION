@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/s-Himansh/MAKAROV-CHAIN-REACTION/api"
 	"log"
-	"makarov-chains/api"
 	"net/http"
 	"os"
 )
