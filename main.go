@@ -14,18 +14,18 @@ import (
 )
 
 type Results struct {
-	Material      string  `json:"material"`
-	GeometryType  string  `json:"geometry"`
-	Thickness     float64 `json:"thickness"`
-	NumParticles  int     `json:"num_particles"`
-	NumGenerations int    `json:"num_generations"`
-	Seed          int64   `json:"seed"`
-	TotalFissions int     `json:"total_fissions"`
-	TotalAbsorptions int  `json:"total_absorptions"`
-	TotalEscapes  int     `json:"total_escapes"`
-	KEff          float64 `json:"k_effective"`
-	Status        string  `json:"status"`
-	NeutronsPerGen []int  `json:"neutrons_per_gen"`
+	Material         string  `json:"material"`
+	GeometryType     string  `json:"geometry"`
+	Thickness        float64 `json:"thickness"`
+	NumParticles     int     `json:"num_particles"`
+	NumGenerations   int     `json:"num_generations"`
+	Seed             int64   `json:"seed"`
+	TotalFissions    int     `json:"total_fissions"`
+	TotalAbsorptions int     `json:"total_absorptions"`
+	TotalEscapes     int     `json:"total_escapes"`
+	KEff             float64 `json:"k_effective"`
+	Status           string  `json:"status"`
+	NeutronsPerGen   []int   `json:"neutrons_per_gen"`
 }
 
 func main() {

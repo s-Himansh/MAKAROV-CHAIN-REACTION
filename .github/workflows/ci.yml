@@ -1,0 +1,17 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      # ui/node_modules ships stray Go packages; skip the ui tree
+      - run: test -z "$(gofmt -l api cmd loading_nuclear_data models simulation main.go)"
+      - run: go vet $(go list ./... | grep -v /ui/)
+      - run: go test -race $(go list ./... | grep -v /ui/)

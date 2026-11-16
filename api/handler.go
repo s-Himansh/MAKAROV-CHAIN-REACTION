@@ -44,13 +44,13 @@ type SimResponse struct {
 }
 
 type IsotopeInfo struct {
-	Name        string  `json:"name"`
-	FissionXS   float64 `json:"fission_xs"`
+	Name         string  `json:"name"`
+	FissionXS    float64 `json:"fission_xs"`
 	AbsorptionXS float64 `json:"absorption_xs"`
-	ScatterXS   float64 `json:"scatter_xs"`
-	Nu          float64 `json:"nu"`
-	Density     float64 `json:"density"`
-	Description string  `json:"description"`
+	ScatterXS    float64 `json:"scatter_xs"`
+	Nu           float64 `json:"nu"`
+	Density      float64 `json:"density"`
+	Description  string  `json:"description"`
 }
 
 type IsotopesResponse struct {
