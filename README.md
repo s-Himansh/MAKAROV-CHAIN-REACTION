@@ -114,7 +114,7 @@ m := openmc.Model{
 res, err := m.Run(ctx, "openmc", workDir) // res.KEff, res.StdDev
 ```
 
-The XML follows OpenMC's documented formats and is unit-tested against a stand-in binary, but has not been run against a real OpenMC yet. `benchmarks/openmc/` compares this repo's engine with OpenMC in multi-group mode.
+The geometry and settings XML it writes were checked against OpenMC 0.16.0 (multi-group mode); the materials file assumes a continuous-energy library, which was not available to test, and the client is otherwise unit-tested against a stand-in binary. `benchmarks/openmc/` compares this repo's engine with OpenMC in multi-group mode.
 
 ## HTTP API
 
