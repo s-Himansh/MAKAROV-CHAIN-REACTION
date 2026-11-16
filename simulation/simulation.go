@@ -154,19 +154,29 @@ func (s *Simulation) WriteResults(w io.Writer) {
 	}
 }
 
+// inactiveGenerations returns how many leading generations to discard out of
+// total. The fission source needs roughly (optical thickness)^2 generations to
+// converge, so by default thick systems discard more than the old fixed 10.
+// The result never exceeds half the run.
+func (s *Simulation) inactiveGenerations(total int) int {
+	skip := s.Params.Inactive
+	if skip == 0 {
+		skip = 10
+		if s.Geometry != nil {
+			tau := s.Geometry.Thickness * s.ΣTotal
+			skip = max(skip, int(tau*tau))
+		}
+	}
+	return min(skip, total/2)
+}
+
 func (s *Simulation) calculateKeff() {
 	if len(s.Tally.NeutronsPerGen) < 2 {
 		s.Tally.KEff = 0
 		return
 	}
 
-	skipGens := s.Params.Inactive
-	if skipGens == 0 {
-		skipGens = 10
-		if len(s.Tally.NeutronsPerGen) < 20 {
-			skipGens = len(s.Tally.NeutronsPerGen) / 2
-		}
-	}
+	skipGens := s.inactiveGenerations(len(s.Tally.NeutronsPerGen))
 
 	sum := 0.0
 	count := 0
