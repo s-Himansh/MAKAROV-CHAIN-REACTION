@@ -28,6 +28,7 @@ go run main.go --quiet --output results.json
 | `--generations` | `50` | Number of generations |
 | `--geometry` | `slab` | `slab` or `sphere` |
 | `--seed` | `0` (auto) | Random seed for reproducibility |
+| `--inactive` | `0` (auto) | Generations discarded before averaging k; raise for large systems (see below) |
 | `--output` | (none) | Export to `.json` or `.csv` |
 | `--quiet` | `false` | Suppress per-generation output |
 
@@ -80,6 +81,7 @@ This is a teaching and cross-checking tool, not a replacement for production cod
 
 - **One energy point.** Cross sections are thermal (0.0253 eV) only. There is no energy tracking, so moderators (H-1, C-12) cannot slow neutrons down and fast-spectrum benchmarks (Godiva, Jezebel) cannot be reproduced.
 - **Tiny critical sizes.** The mean free path in U-235 metal is about 0.03 cm, so k_eff reaches its infinite-medium value (about 2.08) above a few tenths of a centimetre. Interesting sizes are roughly 0.01-0.3 cm; try `--thickness 0.05`.
+- **Burn-in matters.** A system several mean free paths across takes tens of generations for the fission source to converge, and k_eff is biased until it does. The automatic burn-in is only 10 generations; for radii above about 0.1 cm use `--inactive 100 --generations 400`.
 - **Simple geometry.** An infinite slab (1D) or a bare sphere, one homogeneous material.
 - **Fission source.** Daughter neutrons are born where their parent fissioned; the bank is randomly downsampled to `--particles`. k_eff is the mean generation ratio after a burn-in period, with no uncertainty estimate yet.
 

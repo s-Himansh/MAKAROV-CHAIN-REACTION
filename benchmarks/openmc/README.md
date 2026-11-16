@@ -23,23 +23,36 @@ What to expect, and what a mismatch means:
 
 ## Results
 
-OpenMC 0.16.0, U-235 bare sphere, one group built from `nuclear_data.json`.
-OpenMC's own k_inf check: at r = 1 cm it returns 2.08425, equal to the analytic
-2.0843, so the cross-section mapping is exact.
+OpenMC 0.16.0, U-235 bare sphere, one group built from `nuclear_data.json`,
+20,000 neutrons per generation, 400 generations with the first 100 discarded
+(the script defaults). At r = 1 cm in a larger run OpenMC returns 2.08425,
+equal to the analytic k_inf = 2.0843, so the cross-section mapping is exact.
 
-| radius (cm) | Go k_eff | OpenMC k_eff |
-|---|---|---|
-| 0.02 | 0.75-0.88 (6 seeds, noisy: near-subcritical) | 0.803 +/- 0.001 |
-| 0.05 | 1.382 | 1.385 +/- 0.001 |
-| 0.1 | 1.768 | 1.765 +/- 0.002 |
-| 0.3 | 2.0255 +/- 0.001 (6 seeds) | 2.037-2.044 (two runs) |
-| 1.0 | about k_inf | 2.0843 |
+| radius (cm) | Go k_eff | OpenMC k_eff | diff |
+|---|---|---|---|
+| 0.02 | 0.8019 | 0.8020 +/- 0.0002 | -0.0001 |
+| 0.05 | 1.3841 | 1.3851 +/- 0.0003 | -0.0010 |
+| 0.1 | 1.7613 | 1.7622 +/- 0.0002 | -0.0009 |
+| 0.3 | 2.0281 | 2.0282 +/- 0.0001 | -0.0001 |
+| 1.0 | 2.0772 | 2.0811 +/- 0.0001 | -0.0038 |
 
-The engines agree to about 0.2% at 0.05 and 0.1 cm. At 0.3 cm Go is roughly
-0.5-1% lower, more than its seed-to-seed spread (0.001), so there is a small
-systematic difference in leakage that is not yet explained. Two OpenMC runs
-at 0.3 cm differ by about 5 of their own reported standard deviations, so
-OpenMC's quoted errors are optimistic here as well. Candidates to check next:
-the bank and downsampling scheme versus OpenMC's per-collision fission-site
-banking, and the k estimator (generation ratio versus OpenMC's combined
-estimator).
+The engines agree to 0.01-0.07% from 0.02 to 0.3 cm. At 1 cm (about 30 mean
+free paths across) the fission source converges slowly, so 100 inactive
+generations is not enough for either code; Go with 300 inactive of 800 gives
+2.0785, still approaching k_inf.
+
+## What the comparison found and fixed
+
+An earlier run showed Go 0.5-1% below OpenMC at 0.3 cm. Two causes, both fixed:
+
+1. **Burn-in too short.** The fission source of a sphere several mean free
+   paths across takes tens of generations to converge. Go started from a
+   uniform source (k too low) and OpenMC from a point at the centre (k too
+   high), and with 10 inactive generations neither had settled. First-generation
+   transport matched (leakage 7.41% in Go versus 7.28% +/- 0.08 in OpenMC for a
+   fixed uniform source), which ruled out the transport itself. `--inactive`
+   makes the burn-in configurable.
+2. **Subcritical systems died out.** The bank was only ever reduced, so a
+   subcritical run shrank every generation until no neutrons were left and
+   k_eff was never estimated. The bank is now renormalised to `--particles`
+   every generation, as OpenMC does.

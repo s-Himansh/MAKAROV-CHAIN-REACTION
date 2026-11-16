@@ -31,18 +31,18 @@ def macro_xs(isotope):
     return fis + cap + sca, fis + cap, fis, data["nu"] * fis, sca
 
 
-def go_keff(isotope, radius, particles, generations, seed):
+def go_keff(isotope, radius, particles, generations, inactive, seed):
     with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp) / "r.json"
         subprocess.run(
             ["go", "run", ".", "--quiet", "--isotope", isotope, "--geometry", "sphere",
              "--thickness", str(radius), "--particles", str(particles),
-             "--generations", str(generations), "--seed", str(seed), "--output", str(out)],
+             "--generations", str(generations), "--inactive", str(inactive), "--seed", str(seed), "--output", str(out)],
             cwd=ROOT, check=True, capture_output=True)
         return json.loads(out.read_text())["k_effective"]
 
 
-def openmc_keff(isotope, radius, particles, generations):
+def openmc_keff(isotope, radius, particles, generations, inactive):
     import numpy as np
     import openmc
 
@@ -74,7 +74,7 @@ def openmc_keff(isotope, radius, particles, generations):
         settings = openmc.Settings()
         settings.energy_mode = "multi-group"
         settings.batches = generations
-        settings.inactive = min(10, generations // 2)
+        settings.inactive = inactive
         settings.particles = particles
         settings.source = openmc.IndependentSource(space=openmc.stats.Point((0, 0, 0)))
         settings.output = {"tallies": False, "summary": False}
@@ -90,7 +90,9 @@ def main():
     ap.add_argument("--isotope", default="U-235")
     ap.add_argument("--radii", type=float, nargs="+", default=[0.02, 0.05, 0.1, 0.3])
     ap.add_argument("--particles", type=int, default=20000)
-    ap.add_argument("--generations", type=int, default=60)
+    ap.add_argument("--generations", type=int, default=400)
+    ap.add_argument("--inactive", type=int, default=100,
+                    help="burn-in generations; thick systems converge slowly, too few biases k")
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--skip-openmc", action="store_true", help="only print the Go results")
     a = ap.parse_args()
@@ -99,11 +101,11 @@ def main():
     print(f"{a.isotope}: Sigma_t={st:.3f}/cm  analytic k_inf = nuSigma_f/Sigma_a = {nusf / sa:.4f}")
     print(f"{'radius cm':>10} {'go k_eff':>10} {'openmc k_eff':>16} {'diff':>8}")
     for r in a.radii:
-        g = go_keff(a.isotope, r, a.particles, a.generations, a.seed)
+        g = go_keff(a.isotope, r, a.particles, a.generations, a.inactive, a.seed)
         if a.skip_openmc:
             print(f"{r:>10} {g:>10.4f}")
             continue
-        k, s = openmc_keff(a.isotope, r, a.particles, a.generations)
+        k, s = openmc_keff(a.isotope, r, a.particles, a.generations, a.inactive)
         print(f"{r:>10} {g:>10.4f} {k:>9.4f}±{s:.4f} {g - k:>+8.4f}")
 
 

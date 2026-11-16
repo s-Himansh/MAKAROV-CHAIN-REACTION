@@ -34,6 +34,7 @@ func main() {
 	particles := flag.Int("particles", 1000, "Neutrons per generation")
 	generations := flag.Int("generations", 50, "Number of generations to run")
 	geometry := flag.String("geometry", "slab", "Geometry type: slab or sphere")
+	inactive := flag.Int("inactive", 0, "Generations discarded before averaging k (0 = auto); use more for large systems")
 	seed := flag.Int64("seed", 0, "Random seed (0 = auto)")
 	output := flag.String("output", "", "Output file path (.json or .csv)")
 	quiet := flag.Bool("quiet", false, "Suppress generation-by-generation output")
@@ -60,6 +61,7 @@ func main() {
 
 	sim.Params.NumParticles = *particles
 	sim.Params.NumGenerations = *generations
+	sim.Params.Inactive = *inactive
 	sim.Geometry.Type = geoType
 	if *seed != 0 {
 		sim.Params.Seed = *seed
