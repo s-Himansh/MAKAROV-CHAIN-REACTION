@@ -159,3 +159,7 @@ go test ./...
 
 Thermal neutron cross sections at 0.0253 eV (293.6 K) from ENDF/B-VIII.0.
 See `DATA_SOURCES.md` for full attribution and verification instructions.
+
+## License
+
+MIT, see `LICENSE`.
