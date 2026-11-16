@@ -74,6 +74,37 @@ simulation/
 nuclear_data.json                ENDF/B-VIII.0 cross-section data
 ```
 
+## Scope and limits
+
+This is a teaching and cross-checking tool, not a replacement for production codes such as [OpenMC](https://github.com/openmc-dev/openmc).
+
+- **One energy point.** Cross sections are thermal (0.0253 eV) only. There is no energy tracking, so moderators (H-1, C-12) cannot slow neutrons down and fast-spectrum benchmarks (Godiva, Jezebel) cannot be reproduced.
+- **Tiny critical sizes.** The mean free path in U-235 metal is about 0.03 cm, so k_eff reaches its infinite-medium value (about 2.08) above a few tenths of a centimetre. Interesting sizes are roughly 0.01-0.3 cm; try `--thickness 0.05`.
+- **Simple geometry.** An infinite slab (1D) or a bare sphere, one homogeneous material.
+- **Fission source.** Daughter neutrons are born where their parent fissioned; the bank is randomly downsampled to `--particles`. k_eff is the mean generation ratio after a burn-in period, with no uncertainty estimate yet.
+
+## Use as a library
+
+```bash
+go get github.com/s-Himansh/MAKAROV-CHAIN-REACTION
+```
+
+```go
+lib, _ := loadingnucleardata.LoadNuclearData("nuclear_data.json")
+sim, _ := simulation.New(lib, "U-235", 0.1) // isotope, thickness or radius in cm
+sim.Geometry.Type = models.Sphere
+sim.Params.Seed = 42
+sim.OnGeneration = func(g simulation.GenStats) { /* progress */ }
+sim.Run()
+fmt.Println(sim.Tally.KEff)
+```
+
+`Run` never prints; use `OnGeneration` for progress and `WriteResults(w)` for the text summary. A runnable version is in `simulation/example_test.go`.
+
+## HTTP API
+
+`go run ./cmd/server` serves `POST /api/simulate`, `GET /api/isotopes` and `GET /api/health`. Errors are `{"error": "..."}`. Requests are capped at 100,000 particles, 1,000 generations and 1,000 cm.
+
 ## Output
 
 ```
