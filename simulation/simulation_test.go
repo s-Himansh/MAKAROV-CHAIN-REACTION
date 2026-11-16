@@ -1,6 +1,7 @@
 package simulation
 
 import (
+	"math"
 	"math/rand/v2"
 	"testing"
 
@@ -119,7 +120,7 @@ func TestTrackNeutron1D(t *testing.T) {
 	rng := rand.New(rand.NewPCG(42, 0))
 
 	for i := range 100 {
-		outcome := sim.trackNeutron1D(rng)
+		outcome := sim.trackNeutron1D(rng, sim.sampleSource(rng))
 		if outcome == nil {
 			t.Fatalf("iteration %d: nil outcome", i)
 		}
@@ -134,7 +135,7 @@ func TestTrackNeutron3D(t *testing.T) {
 	rng := rand.New(rand.NewPCG(42, 0))
 
 	for i := range 100 {
-		outcome := sim.trackNeutron3D(rng)
+		outcome := sim.trackNeutron3D(rng, sim.sampleSource(rng))
 		if outcome == nil {
 			t.Fatalf("iteration %d: nil outcome", i)
 		}
@@ -218,5 +219,40 @@ func TestCalculateKeffSupercritical(t *testing.T) {
 
 	if sim.Tally.KEff <= 1.0 {
 		t.Errorf("k_eff = %f, want > 1.0 for supercritical", sim.Tally.KEff)
+	}
+}
+
+func TestSampleSourceInsideGeometry(t *testing.T) {
+	lib := loadTestLibrary(t)
+	sim, _ := New(lib, "U-235", 10.0)
+	rng := rand.New(rand.NewPCG(1, 0))
+
+	for range 1000 {
+		if p := sim.sampleSource(rng); p.X < 0 || p.X > 10 {
+			t.Fatalf("slab site %+v outside [0,10]", p)
+		}
+	}
+	sim.Geometry.Type = models.Sphere
+	for range 1000 {
+		p := sim.sampleSource(rng)
+		if r := math.Sqrt(p.X*p.X + p.Y*p.Y + p.Z*p.Z); r > 10 {
+			t.Fatalf("sphere site %+v has r=%f > 10", p, r)
+		}
+	}
+}
+
+func TestRunReproducible(t *testing.T) {
+	lib := loadTestLibrary(t)
+	run := func() []int {
+		sim, _ := New(lib, "U-235", 5.0)
+		sim.Params.NumParticles, sim.Params.NumGenerations, sim.Params.Seed = 200, 8, 7
+		sim.Run()
+		return sim.Tally.NeutronsPerGen
+	}
+	a, b := run(), run()
+	for i := range a {
+		if a[i] != b[i] {
+			t.Fatalf("gen %d differs: %d vs %d", i, a[i], b[i])
+		}
 	}
 }

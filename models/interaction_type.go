@@ -26,8 +26,12 @@ func (it InteractionType) String() string {
 	}
 }
 
+// Site is a point in space where a neutron is born or fissions.
+type Site struct{ X, Y, Z float64 }
+
 // NeutronOutcome holds the result of tracking one neutron
 type NeutronOutcome struct {
 	Type        InteractionType
-	NewNeutrons int // Only non-zero for fission
+	NewNeutrons int  // Only non-zero for fission
+	Site        Site // Where the fission happened
 }

@@ -63,25 +63,31 @@ func New(library *library.NuclearDataLibrary, isotope string, thickness float64)
 func (s *Simulation) Run() {
 	rng := rand.New(rand.NewPCG(uint64(s.Params.Seed), 0))
 
-	neutronBank := s.Params.NumParticles
+	bank := make([]models.Site, s.Params.NumParticles)
+	for i := range bank {
+		bank[i] = s.sampleSource(rng)
+	}
 
 	for gen := range s.Params.NumGenerations {
-		if neutronBank == 0 {
+		if len(bank) == 0 {
 			break
 		}
 
-		nextBank := 0
+		var next []models.Site
 		fissions := 0
 		absorptions := 0
 		escapes := 0
 
-		for n := 0; n < neutronBank; n++ {
-			outcome := s.trackNeutron(rng)
+		for _, src := range bank {
+			outcome := s.trackNeutron(rng, src)
 
 			switch outcome.Type {
 			case models.Fission:
 				fissions++
-				nextBank += outcome.NewNeutrons
+				// Daughters are born where the parent fissioned.
+				for range outcome.NewNeutrons {
+					next = append(next, outcome.Site)
+				}
 				s.Tally.TotalFissions++
 			case models.Absorption:
 				absorptions++
@@ -92,21 +98,20 @@ func (s *Simulation) Run() {
 			}
 		}
 
-		s.Tally.NeutronsPerGen = append(s.Tally.NeutronsPerGen, nextBank)
+		s.Tally.NeutronsPerGen = append(s.Tally.NeutronsPerGen, len(next))
 
-		k_gen := float64(nextBank) / float64(neutronBank)
+		k_gen := float64(len(next)) / float64(len(bank))
 
 		if s.OnGeneration != nil {
-			s.OnGeneration(GenStats{gen + 1, neutronBank, nextBank, fissions, absorptions, escapes, k_gen})
+			s.OnGeneration(GenStats{gen + 1, len(bank), len(next), fissions, absorptions, escapes, k_gen})
 		}
 
-		if nextBank > s.Params.NumParticles {
-			neutronBank = s.Params.NumParticles
-		} else if nextBank == 0 {
-			neutronBank = 0
-		} else {
-			neutronBank = nextBank
+		// Population control: keep a random NumParticles of the new sites.
+		if len(next) > s.Params.NumParticles {
+			rng.Shuffle(len(next), func(i, j int) { next[i], next[j] = next[j], next[i] })
+			next = next[:s.Params.NumParticles]
 		}
+		bank = next
 	}
 
 	s.calculateKeff()
@@ -223,25 +228,32 @@ func (s *Simulation) sampleIsotropicDirection(rng *rand.Rand) (float64, float64,
 	return dx, dy, dz
 }
 
-func (s *Simulation) trackNeutron(rng *rand.Rand) *models.NeutronOutcome {
-	if s.Geometry.Type == models.Sphere {
-		return s.trackNeutron3D(rng)
+// sampleSource returns a uniform random point inside the geometry.
+func (s *Simulation) sampleSource(rng *rand.Rand) models.Site {
+	if s.Geometry.Type != models.Sphere {
+		return models.Site{X: s.Geometry.Thickness * rng.Float64()}
 	}
-	return s.trackNeutron1D(rng)
+	r := s.Geometry.Thickness * math.Cbrt(rng.Float64())
+	dx, dy, dz := s.sampleIsotropicDirection(rng)
+	return models.Site{X: r * dx, Y: r * dy, Z: r * dz}
 }
 
-func (s *Simulation) trackNeutron1D(rng *rand.Rand) *models.NeutronOutcome {
-	position := s.Geometry.Thickness / 2.0
+func (s *Simulation) trackNeutron(rng *rand.Rand, src models.Site) *models.NeutronOutcome {
+	if s.Geometry.Type == models.Sphere {
+		return s.trackNeutron3D(rng, src)
+	}
+	return s.trackNeutron1D(rng, src)
+}
+
+func (s *Simulation) trackNeutron1D(rng *rand.Rand, src models.Site) *models.NeutronOutcome {
+	position := src.X
 	slabThickness := s.Geometry.Thickness
 
 	for i := range maxCollisions {
 		distance := s.sampleCollisionDistance(rng)
 
-		if rng.Float64() < 0.5 {
-			position += distance
-		} else {
-			position -= distance
-		}
+		// Isotropic scattering: direction cosine is uniform on [-1, 1].
+		position += distance * (2*rng.Float64() - 1)
 
 		if position < 0 || position > slabThickness {
 			return &models.NeutronOutcome{Type: models.Escape}
@@ -251,7 +263,7 @@ func (s *Simulation) trackNeutron1D(rng *rand.Rand) *models.NeutronOutcome {
 
 		switch interactionType {
 		case models.Fission:
-			return &models.NeutronOutcome{Type: models.Fission, NewNeutrons: s.sampleNeutronEmission(rng)}
+			return &models.NeutronOutcome{Type: models.Fission, NewNeutrons: s.sampleNeutronEmission(rng), Site: models.Site{X: position}}
 		case models.Absorption:
 			return &models.NeutronOutcome{Type: models.Absorption}
 		default:
@@ -263,9 +275,9 @@ func (s *Simulation) trackNeutron1D(rng *rand.Rand) *models.NeutronOutcome {
 	return &models.NeutronOutcome{Type: models.Absorption}
 }
 
-func (s *Simulation) trackNeutron3D(rng *rand.Rand) *models.NeutronOutcome {
+func (s *Simulation) trackNeutron3D(rng *rand.Rand, src models.Site) *models.NeutronOutcome {
 	radius := s.Geometry.Thickness
-	x, y, z := 0.0, 0.0, 0.0
+	x, y, z := src.X, src.Y, src.Z
 
 	for i := range maxCollisions {
 		distance := s.sampleCollisionDistance(rng)
@@ -284,7 +296,7 @@ func (s *Simulation) trackNeutron3D(rng *rand.Rand) *models.NeutronOutcome {
 
 		switch interactionType {
 		case models.Fission:
-			return &models.NeutronOutcome{Type: models.Fission, NewNeutrons: s.sampleNeutronEmission(rng)}
+			return &models.NeutronOutcome{Type: models.Fission, NewNeutrons: s.sampleNeutronEmission(rng), Site: models.Site{X: x, Y: y, Z: z}}
 		case models.Absorption:
 			return &models.NeutronOutcome{Type: models.Absorption}
 		default:
