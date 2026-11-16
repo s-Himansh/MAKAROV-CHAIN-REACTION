@@ -101,6 +101,21 @@ fmt.Println(sim.Tally.KEff)
 
 `Run` never prints; use `OnGeneration` for progress and `WriteResults(w)` for the text summary. A runnable version is in `simulation/example_test.go`.
 
+## OpenMC client
+
+The `openmc` package writes OpenMC XML inputs for a bare sphere, runs the `openmc` executable and parses k-effective, so Go programs can drive OpenMC without its Python API. It needs a working OpenMC install and `OPENMC_CROSS_SECTIONS` set.
+
+```go
+m := openmc.Model{
+    Nuclides: []openmc.Nuclide{{Name: "U235", AO: 1}},
+    Density:  19.1, Radius: 8.7,
+    Particles: 5000, Batches: 100, Inactive: 20,
+}
+res, err := m.Run(ctx, "openmc", workDir) // res.KEff, res.StdDev
+```
+
+The XML follows OpenMC's documented formats and is unit-tested against a stand-in binary, but has not been run against a real OpenMC yet. `benchmarks/openmc/` compares this repo's engine with OpenMC in multi-group mode.
+
 ## HTTP API
 
 `go run ./cmd/server` serves `POST /api/simulate`, `GET /api/isotopes` and `GET /api/health`. Errors are `{"error": "..."}`. Requests are capped at 100,000 particles, 1,000 generations and 1,000 cm.
