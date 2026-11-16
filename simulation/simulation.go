@@ -2,6 +2,7 @@ package simulation
 
 import (
 	"fmt"
+	"io"
 	"makarov-chains/models"
 	"math"
 	"math/rand/v2"
@@ -18,7 +19,8 @@ type Simulation struct {
 	Geometry *models.Geometry
 	Params   *models.SimParams
 	Tally    *models.Tally
-	Quiet    bool
+	// OnGeneration, if set, is called after each generation. Run itself never prints.
+	OnGeneration func(GenStats)
 
 	ΣFission    float64
 	ΣAbsorption float64
@@ -26,8 +28,15 @@ type Simulation struct {
 	ΣTotal      float64
 }
 
-func (s *Simulation) SetQuiet(quiet bool) {
-	s.Quiet = quiet
+// GenStats summarises one generation for OnGeneration callbacks.
+type GenStats struct {
+	Generation  int
+	NeutronsIn  int
+	NeutronsOut int
+	Fissions    int
+	Absorptions int
+	Escapes     int
+	K           float64
 }
 
 func New(library *library.NuclearDataLibrary, isotope string, thickness float64) (*Simulation, error) {
@@ -56,21 +65,8 @@ func (s *Simulation) Run() {
 
 	neutronBank := s.Params.NumParticles
 
-	geoDesc := fmt.Sprintf("1D slab, %.1f cm thick", s.Geometry.Thickness)
-	if s.Geometry.Type == models.Sphere {
-		geoDesc = fmt.Sprintf("sphere, %.1f cm radius", s.Geometry.Thickness)
-	}
-
-	if !s.Quiet {
-		fmt.Printf("Starting simulation: %s, %s\n", s.Material.Nuclide.Name, geoDesc)
-		fmt.Printf("Σ_total = %.2f cm⁻¹, MFP = %.4f cm\n\n", s.ΣTotal, 1.0/s.ΣTotal)
-	}
-
 	for gen := range s.Params.NumGenerations {
 		if neutronBank == 0 {
-			if !s.Quiet {
-				fmt.Println("Chain reaction died (subcritical)")
-			}
 			break
 		}
 
@@ -100,8 +96,8 @@ func (s *Simulation) Run() {
 
 		k_gen := float64(nextBank) / float64(neutronBank)
 
-		if !s.Quiet {
-			fmt.Printf("Gen %2d: %5d → %5d neutrons (F:%4d A:%4d E:%4d) k=%.3f\n", gen+1, neutronBank, nextBank, fissions, absorptions, escapes, k_gen)
+		if s.OnGeneration != nil {
+			s.OnGeneration(GenStats{gen + 1, neutronBank, nextBank, fissions, absorptions, escapes, k_gen})
 		}
 
 		if nextBank > s.Params.NumParticles {
@@ -116,30 +112,30 @@ func (s *Simulation) Run() {
 	s.calculateKeff()
 }
 
-func (s *Simulation) PrintResults() {
-	fmt.Println("\n" + strings.Repeat("=", 50))
-	fmt.Println("SIMULATION RESULTS")
-	fmt.Println(strings.Repeat("=", 50))
-	fmt.Printf("Material: %s\n", s.Material.Nuclide.Name)
+func (s *Simulation) WriteResults(w io.Writer) {
+	fmt.Fprintln(w, "\n"+strings.Repeat("=", 50))
+	fmt.Fprintln(w, "SIMULATION RESULTS")
+	fmt.Fprintln(w, strings.Repeat("=", 50))
+	fmt.Fprintf(w, "Material: %s\n", s.Material.Nuclide.Name)
 
 	if s.Geometry.Type == models.Sphere {
-		fmt.Printf("Geometry: sphere, %.2f cm radius\n", s.Geometry.Thickness)
+		fmt.Fprintf(w, "Geometry: sphere, %.2f cm radius\n", s.Geometry.Thickness)
 	} else {
-		fmt.Printf("Geometry: 1D slab, %.2f cm thick\n", s.Geometry.Thickness)
+		fmt.Fprintf(w, "Geometry: 1D slab, %.2f cm thick\n", s.Geometry.Thickness)
 	}
 
-	fmt.Printf("\nTotal events:\n")
-	fmt.Printf("  Fissions:    %d\n", s.Tally.TotalFissions)
-	fmt.Printf("  Absorptions: %d\n", s.Tally.TotalAbsorptions)
-	fmt.Printf("  Escapes:     %d\n", s.Tally.TotalEscapes)
-	fmt.Printf("\nk_effective: %.4f\n", s.Tally.KEff)
+	fmt.Fprintf(w, "\nTotal events:\n")
+	fmt.Fprintf(w, "  Fissions:    %d\n", s.Tally.TotalFissions)
+	fmt.Fprintf(w, "  Absorptions: %d\n", s.Tally.TotalAbsorptions)
+	fmt.Fprintf(w, "  Escapes:     %d\n", s.Tally.TotalEscapes)
+	fmt.Fprintf(w, "\nk_effective: %.4f\n", s.Tally.KEff)
 
 	if s.Tally.KEff > 1.0 {
-		fmt.Println("→ SUPERCRITICAL (growing reaction)")
+		fmt.Fprintln(w, "→ SUPERCRITICAL (growing reaction)")
 	} else if s.Tally.KEff < 1.0 {
-		fmt.Println("→ SUBCRITICAL (dying reaction)")
+		fmt.Fprintln(w, "→ SUBCRITICAL (dying reaction)")
 	} else {
-		fmt.Println("→ CRITICAL (sustained reaction)")
+		fmt.Fprintln(w, "→ CRITICAL (sustained reaction)")
 	}
 }
 

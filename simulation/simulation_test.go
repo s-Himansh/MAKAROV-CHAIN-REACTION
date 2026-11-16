@@ -171,17 +171,23 @@ func TestRunSphereCompletes(t *testing.T) {
 	}
 }
 
-func TestRunQuiet(t *testing.T) {
+func TestOnGeneration(t *testing.T) {
 	lib := loadTestLibrary(t)
 	sim, _ := New(lib, "U-235", 20.0)
 	sim.Params.NumParticles = 50
 	sim.Params.NumGenerations = 5
-	sim.SetQuiet(true)
+	calls := 0
+	sim.OnGeneration = func(g GenStats) {
+		calls++
+		if g.Generation != calls || g.NeutronsIn <= 0 {
+			t.Errorf("bad stats %+v", g)
+		}
+	}
 
 	sim.Run()
 
-	if sim.Tally.KEff <= 0 {
-		t.Errorf("k_eff = %f, want > 0", sim.Tally.KEff)
+	if calls != len(sim.Tally.NeutronsPerGen) || calls == 0 {
+		t.Errorf("callback calls = %d, generations = %d", calls, len(sim.Tally.NeutronsPerGen))
 	}
 }
 

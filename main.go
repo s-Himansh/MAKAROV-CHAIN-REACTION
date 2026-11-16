@@ -65,12 +65,23 @@ func main() {
 		sim.Params.Seed = *seed
 	}
 
-	if *quiet {
-		sim.SetQuiet(true)
+	if !*quiet {
+		geoDesc := fmt.Sprintf("1D slab, %.1f cm thick", sim.Geometry.Thickness)
+		if geoType == models.Sphere {
+			geoDesc = fmt.Sprintf("sphere, %.1f cm radius", sim.Geometry.Thickness)
+		}
+		fmt.Printf("Starting simulation: %s, %s\n", sim.Material.Nuclide.Name, geoDesc)
+		fmt.Printf("Σ_total = %.2f cm⁻¹, MFP = %.4f cm\n\n", sim.ΣTotal, 1.0/sim.ΣTotal)
+		sim.OnGeneration = func(g simulation.GenStats) {
+			fmt.Printf("Gen %2d: %5d → %5d neutrons (F:%4d A:%4d E:%4d) k=%.3f\n", g.Generation, g.NeutronsIn, g.NeutronsOut, g.Fissions, g.Absorptions, g.Escapes, g.K)
+		}
 	}
 
 	sim.Run()
-	sim.PrintResults()
+	if len(sim.Tally.NeutronsPerGen) < sim.Params.NumGenerations {
+		fmt.Println("Chain reaction died (subcritical)")
+	}
+	sim.WriteResults(os.Stdout)
 
 	if *output != "" {
 		results := Results{
