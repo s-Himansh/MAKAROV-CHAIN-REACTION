@@ -7,14 +7,12 @@ import (
 	"makarov-chains/simulation"
 	"net/http"
 	"strings"
-	"sync"
 
 	loadingnucleardata "makarov-chains/loading_nuclear_data"
 )
 
 type Handler struct {
 	library *loadingnucleardata.NuclearDataLibrary
-	mu      sync.RWMutex
 }
 
 type SimRequest struct {
@@ -73,20 +71,42 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("OPTIONS /api/isotopes", h.handleCORS)
 }
 
-func (h *Handler) handleCORS(w http.ResponseWriter, r *http.Request) {
+// Limits keep one request from tying up the server.
+const (
+	maxBodyBytes   = 1 << 20
+	maxParticles   = 100_000
+	maxGenerations = 1_000
+	maxThickness   = 1_000.0
+)
+
+func setCORS(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	w.WriteHeader(http.StatusOK)
+}
+
+// handleCORS answers preflight requests only; real handlers call setCORS so
+// they can still set Content-Type and a status after it.
+func (h *Handler) handleCORS(w http.ResponseWriter, r *http.Request) {
+	setCORS(w)
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func writeError(w http.ResponseWriter, status int, msg string) {
+	setCORS(w)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(map[string]string{"error": msg})
 }
 
 func (h *Handler) handleHealth(w http.ResponseWriter, r *http.Request) {
+	setCORS(w)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
 
 func (h *Handler) handleIsotopes(w http.ResponseWriter, r *http.Request) {
-	h.handleCORS(w, r)
+	setCORS(w)
 
 	isotopes := []string{"U-235", "U-238", "Pu-239", "Pu-240", "Pu-241", "H-1", "C-12", "O-16", "B-10", "Cd-113"}
 
@@ -112,11 +132,10 @@ func (h *Handler) handleIsotopes(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleSimulate(w http.ResponseWriter, r *http.Request) {
-	h.handleCORS(w, r)
-
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 	var req SimRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -136,12 +155,19 @@ func (h *Handler) handleSimulate(w http.ResponseWriter, r *http.Request) {
 		req.Geometry = "slab"
 	}
 
-	h.mu.Lock()
-	sim, err := simulation.New(h.library, req.Isotope, req.Thickness)
-	h.mu.Unlock()
+	geometry := strings.ToLower(req.Geometry)
+	switch {
+	case geometry != "slab" && geometry != "sphere":
+		writeError(w, http.StatusBadRequest, "geometry must be slab or sphere")
+		return
+	case req.Particles > maxParticles, req.Generations > maxGenerations, req.Thickness > maxThickness:
+		writeError(w, http.StatusBadRequest, fmt.Sprintf("limits: particles <= %d, generations <= %d, thickness <= %g", maxParticles, maxGenerations, maxThickness))
+		return
+	}
 
+	sim, err := simulation.New(h.library, req.Isotope, req.Thickness)
 	if err != nil {
-		http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -152,7 +178,7 @@ func (h *Handler) handleSimulate(w http.ResponseWriter, r *http.Request) {
 	}
 	sim.SetQuiet(true)
 
-	if strings.ToLower(req.Geometry) == "sphere" {
+	if geometry == "sphere" {
 		sim.Geometry.Type = models.Sphere
 	}
 
@@ -183,6 +209,7 @@ func (h *Handler) handleSimulate(w http.ResponseWriter, r *http.Request) {
 		SigmaTotal:       sim.ΣTotal,
 	}
 
+	setCORS(w)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
 }
