@@ -256,3 +256,19 @@ func TestRunReproducible(t *testing.T) {
 		}
 	}
 }
+
+// A large sphere has negligible leakage, so k_eff must approach the analytic
+// infinite-medium value nu*Sigma_f / (Sigma_f + Sigma_capture).
+func TestKeffApproachesKInfinity(t *testing.T) {
+	lib := loadTestLibrary(t)
+	sim, _ := New(lib, "U-235", 5.0)
+	sim.Geometry.Type = models.Sphere
+	sim.Params.NumParticles, sim.Params.NumGenerations, sim.Params.Seed = 2000, 40, 11
+
+	sim.Run()
+
+	kInf := sim.Material.Nuclide.Nu * sim.ΣFission / (sim.ΣFission + sim.ΣAbsorption)
+	if got := sim.Tally.KEff; math.Abs(got-kInf)/kInf > 0.02 {
+		t.Errorf("k_eff = %.4f, want within 2%% of k_inf = %.4f", got, kInf)
+	}
+}
