@@ -8,9 +8,9 @@ import (
 	"os"
 	"strings"
 
-	loadingnucleardata "makarov-chains/loading_nuclear_data"
-	"makarov-chains/models"
-	"makarov-chains/simulation"
+	loadingnucleardata "github.com/s-Himansh/MAKAROV-CHAIN-REACTION/loading_nuclear_data"
+	"github.com/s-Himansh/MAKAROV-CHAIN-REACTION/models"
+	"github.com/s-Himansh/MAKAROV-CHAIN-REACTION/simulation"
 )
 
 type Results struct {

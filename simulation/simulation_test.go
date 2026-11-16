@@ -5,8 +5,8 @@ import (
 	"math/rand/v2"
 	"testing"
 
-	loadingnucleardata "makarov-chains/loading_nuclear_data"
-	"makarov-chains/models"
+	loadingnucleardata "github.com/s-Himansh/MAKAROV-CHAIN-REACTION/loading_nuclear_data"
+	"github.com/s-Himansh/MAKAROV-CHAIN-REACTION/models"
 )
 
 func loadTestLibrary(t *testing.T) *loadingnucleardata.NuclearDataLibrary {

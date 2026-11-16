@@ -573,7 +573,7 @@ package main
 import (
     "fmt"
     "log"
-    "makarov-chains/models"
+    "github.com/s-Himansh/MAKAROV-CHAIN-REACTION/models"
 )
 
 func main() {

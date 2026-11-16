@@ -2,14 +2,14 @@ package simulation
 
 import (
 	"fmt"
+	"github.com/s-Himansh/MAKAROV-CHAIN-REACTION/models"
 	"io"
-	"makarov-chains/models"
 	"math"
 	"math/rand/v2"
 	"strings"
 	"time"
 
-	library "makarov-chains/loading_nuclear_data"
+	library "github.com/s-Himansh/MAKAROV-CHAIN-REACTION/loading_nuclear_data"
 )
 
 const maxCollisions = 10000

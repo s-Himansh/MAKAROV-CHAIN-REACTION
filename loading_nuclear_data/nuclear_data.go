@@ -3,7 +3,7 @@ package loadingnucleardata
 import (
 	"encoding/json"
 	"fmt"
-	"makarov-chains/models"
+	"github.com/s-Himansh/MAKAROV-CHAIN-REACTION/models"
 	"os"
 )
 
