@@ -9,8 +9,7 @@ radii. No external nuclear data download is needed.
     python3 benchmarks/openmc/compare.py --isotope U-235 --radii 0.02 0.05 0.1 0.3
 
 Run from the repository root with `openmc` importable and `go` on PATH.
-Written against the OpenMC 0.15 Python API and not yet run against it; if an
-API call has changed, the XSdata/MGXSLibrary section is the part to adjust.
+Tested with OpenMC 0.16.0 (conda-forge: `micromamba create -n openmc -c conda-forge openmc`).
 """
 import argparse
 import json
