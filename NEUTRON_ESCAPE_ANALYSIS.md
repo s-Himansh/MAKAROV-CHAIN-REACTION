@@ -2,6 +2,8 @@
 
 > Understanding why neutrons don't escape thick U-235 slabs
 
+> **Note:** the physics below holds. Since this was written the engine starts neutrons at uniform random points and then at fission sites rather than the slab centre, so the "born at the centre" figures are illustrative worst cases for escape. Interesting sizes with thermal-only data are a fraction of a centimetre; see the README.
+
 ## Table of Contents
 1. [Observation](#observation)
 2. [Physical Explanation](#physical-explanation)

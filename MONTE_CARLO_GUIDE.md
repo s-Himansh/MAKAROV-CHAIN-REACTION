@@ -2,6 +2,8 @@
 
 > Step-by-step guide to building the core Monte Carlo simulation
 
+> **Note:** this is a teaching walkthrough and its code is simplified. The real engine in `simulation/simulation.go` differs in these ways: neutrons start at uniform random points and each daughter is born where its parent fissioned (a fission bank, not the slab centre); the bank is renormalised to `NumParticles` every generation; `Run` never prints (use `OnGeneration` and `WriteResults`); the slab walk uses an isotropic direction cosine; and the first `Inactive` generations (auto-scaled with system size) are discarded when averaging k. Read the source for the exact behaviour.
+
 ## Table of Contents
 1. [Overview](#overview)
 2. [Mathematical Foundation](#mathematical-foundation)
@@ -624,7 +626,7 @@ func (s *Simulation) trackNeutron() NeutronOutcome {
 
 **What this does:**
 
-1. **Start** at center of geometry
+1. **Start** at a source site (this guide simplifies to the centre; the engine samples uniform sites, then fission sites)
 2. **Loop** until neutron dies or escapes:
    - Sample random distance to collision
    - Move neutron
