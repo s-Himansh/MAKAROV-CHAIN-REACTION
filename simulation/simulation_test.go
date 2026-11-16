@@ -196,7 +196,7 @@ func TestCalculateKeffSubcritical(t *testing.T) {
 	sim := &Simulation{
 		Params: &models.SimParams{NumParticles: 100},
 		Tally: &models.Tally{
-			NeutronsPerGen: []int{100, 50, 25, 12, 6},
+			NeutronsPerGen: []int{80, 80, 80, 80, 80},
 		},
 	}
 
@@ -270,5 +270,19 @@ func TestKeffApproachesKInfinity(t *testing.T) {
 	kInf := sim.Material.Nuclide.Nu * sim.ΣFission / (sim.ΣFission + sim.ΣAbsorption)
 	if got := sim.Tally.KEff; math.Abs(got-kInf)/kInf > 0.02 {
 		t.Errorf("k_eff = %.4f, want within 2%% of k_inf = %.4f", got, kInf)
+	}
+}
+
+func TestInactiveSkipsGenerations(t *testing.T) {
+	sim := &Simulation{
+		Params: &models.SimParams{NumParticles: 100, Inactive: 3},
+		Tally:  &models.Tally{NeutronsPerGen: []int{100, 100, 100, 200, 200, 200}},
+	}
+
+	sim.calculateKeff()
+
+	// Generations 4-6 each have k = 200/100 = 2 once the first three are skipped.
+	if sim.Tally.KEff != 2.0 {
+		t.Errorf("k_eff = %f, want 2.0", sim.Tally.KEff)
 	}
 }

@@ -106,10 +106,20 @@ func (s *Simulation) Run() {
 			s.OnGeneration(GenStats{gen + 1, len(bank), len(next), fissions, absorptions, escapes, k_gen})
 		}
 
-		// Population control: keep a random NumParticles of the new sites.
-		if len(next) > s.Params.NumParticles {
+		// Population control: renormalise to NumParticles sites every
+		// generation, as production codes do, so subcritical systems keep
+		// enough neutrons to estimate k instead of dying out.
+		n := s.Params.NumParticles
+		switch {
+		case len(next) > n:
 			rng.Shuffle(len(next), func(i, j int) { next[i], next[j] = next[j], next[i] })
-			next = next[:s.Params.NumParticles]
+			next = next[:n]
+		case len(next) > 0 && len(next) < n:
+			resampled := make([]models.Site, n)
+			for i := range resampled {
+				resampled[i] = next[rng.IntN(len(next))]
+			}
+			next = resampled
 		}
 		bank = next
 	}
@@ -150,9 +160,12 @@ func (s *Simulation) calculateKeff() {
 		return
 	}
 
-	skipGens := 10
-	if len(s.Tally.NeutronsPerGen) < 20 {
-		skipGens = len(s.Tally.NeutronsPerGen) / 2
+	skipGens := s.Params.Inactive
+	if skipGens == 0 {
+		skipGens = 10
+		if len(s.Tally.NeutronsPerGen) < 20 {
+			skipGens = len(s.Tally.NeutronsPerGen) / 2
+		}
 	}
 
 	sum := 0.0
@@ -163,11 +176,9 @@ func (s *Simulation) calculateKeff() {
 		if i == 0 {
 			neutronsIn = s.Params.NumParticles
 		} else {
-			prevGen := s.Tally.NeutronsPerGen[i-1]
-			if prevGen > s.Params.NumParticles {
+			// The bank is renormalised to NumParticles unless the chain died.
+			if s.Tally.NeutronsPerGen[i-1] > 0 {
 				neutronsIn = s.Params.NumParticles
-			} else {
-				neutronsIn = prevGen
 			}
 		}
 
