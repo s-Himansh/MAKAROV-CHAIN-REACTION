@@ -176,7 +176,6 @@ func (h *Handler) handleSimulate(w http.ResponseWriter, r *http.Request) {
 	if req.Seed != 0 {
 		sim.Params.Seed = req.Seed
 	}
-	sim.SetQuiet(true)
 
 	if geometry == "sphere" {
 		sim.Geometry.Type = models.Sphere
