@@ -6,7 +6,7 @@ import { api, SimResponse, IsotopeInfo } from "../lib/api";
 export default function Home() {
   const [isotopes, setIsotopes] = useState<IsotopeInfo[]>([]);
   const [isotope, setIsotope] = useState("");
-  const [thickness, setThickness] = useState(20);
+  const [thickness, setThickness] = useState(0.1);
   const [geometry, setGeometry] = useState("slab");
   const [particles, setParticles] = useState(1000);
   const [generations, setGenerations] = useState(50);
@@ -152,8 +152,9 @@ export default function Home() {
                   type="number"
                   value={thickness}
                   onChange={(e) => setThickness(Number(e.target.value))}
-                  min={1}
+                  min={0.01}
                   max={100}
+                  step={0.01}
                   className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-2 text-white font-mono focus:outline-none focus:ring-2 focus:ring-orange-500/50"
                 />
               </div>
